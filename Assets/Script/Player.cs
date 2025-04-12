@@ -8,10 +8,25 @@ public class Player : MonoBehaviour
     public float speed;     //캐릭터 속도 선언
     public GameObject[] waepons; //무기 배열 선언
     public bool[] hasWaepons; //무기 보유 여부 배열 선언
+    public GameObject[] granades; //수류탄 배열 선언
+    public int hasGranades;
+
+
+    public int ammo;
+    public int coin;
+    public int health;
+    
+
+
+    public int maxAmmo;
+    public int maxCoin;
+    public int maxHealth;
+    public int maxHasGranades;
 
 
     float hAxis;
     float vAxis;
+
     bool wDown;     //쉬프트 키가 눌렸는지 확인하는 변수 선언]
     bool jDown;
     bool iDown;     //E키 입력
@@ -294,8 +309,42 @@ public class Player : MonoBehaviour
         }
     }
 
+    private void OnTriggerEnter(Collider other)
+    {
+        if (other.tag == "Item")
+        {
+            Item item = other.GetComponent<Item>(); //아이템 컴포넌트를 가져옴
 
+            //아이템 타입의 값에 따른 스위치케 캐이스문 
+            switch (item.type)
+            {
+                case Item.Type.Ammo:
+                    ammo += item.value;
+                    if (ammo > maxAmmo) ammo = maxAmmo;
+                    break;
+                case Item.Type.Coin:
+                    coin += item.value;
+                    if (coin > maxCoin) coin = maxCoin;
+                    break;
+                case Item.Type.Granade:
+                    granades[hasGranades].SetActive(true); //수류탄을 활성화함
+                    hasGranades += item.value;
+                    if (hasGranades > maxHasGranades) hasGranades = maxHasGranades;
+                    
 
+                    break;
+                case Item.Type.Heart:
+                    health += item.value;
+                    if (health > maxHealth) health = maxHealth;
+                    break;
+            }
+            Destroy(other.gameObject); //수집한 아이템을 삭제함
 
+        }
 
+    }
 }
+
+
+
+
