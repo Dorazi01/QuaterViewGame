@@ -11,6 +11,7 @@ public class Player : MonoBehaviour
     public bool[] hasWaepons; //무기 보유 여부 배열 선언
     public GameObject[] granades; //수류탄 배열 선언
     public int hasGranades;
+    public Camera followCam;
 
 
     public int ammo;
@@ -31,6 +32,7 @@ public class Player : MonoBehaviour
     bool wDown;     //쉬프트 키가 눌렸는지 확인하는 변수 선언]
     bool jDown;
     bool fDown;     //F키 입력
+    bool rDown;     //R키 입력
     bool iDown;     //E키 입력
     bool sDown1;
     bool sDown2;
@@ -39,6 +41,7 @@ public class Player : MonoBehaviour
     bool isJump;
     bool isDodge;
     bool isSwap;
+    bool isReload;
     bool isFireReady = true; //발사 준비 상태
 
 
@@ -89,10 +92,11 @@ public class Player : MonoBehaviour
         PlayerTurn(); //캐릭터가 바라보는 방향을 바꿔주는 함수 호출
         Jump(); //점프하는 함수 호출
         Attack(); //공격하는 함수 호출
+        Reload();
         Dodge();
         Interaction();
         Swap();
-
+        
 
     }
 
@@ -108,7 +112,8 @@ public class Player : MonoBehaviour
         vAxis = Input.GetAxis("Vertical");
         wDown = Input.GetButton("Walk"); //쉬프트키가 눌렸는지 확인하는 변수에 대입
         jDown = Input.GetButtonDown("Jump"); //점프키가 눌렸는지 확인하는 변수에 대입
-        fDown = Input.GetButtonDown("Fire1"); //발사키가 눌렸는지 확인하는 변수에 대입
+        fDown = Input.GetButton("Fire1"); //발사키가 눌렸는지 확인하는 변수에 대입
+        rDown = Input.GetButtonDown("Reload"); //재장전키가 눌렸는지 확인하는 변수에 대입
         iDown = Input.GetButtonDown("Interaction"); //점프키가 눌렸는지 확인하는 변수에 대입
         sDown1 = Input.GetButtonDown("Swap1"); //무기1변경
         sDown2 = Input.GetButtonDown("Swap2"); //무기2변경
@@ -126,7 +131,7 @@ public class Player : MonoBehaviour
         if (isDodge)
             dodgeVec = moveVec;
 
-        if (isSwap || !isFireReady) //무기 교체 + 무기 발사 준비가 안된 상태일 때 = 무기 사용 후 재사용 딜레이까지
+        if (isSwap || !isFireReady || isReload) //무기 교체 + 무기 발사 준비가 안된 상태일 때 = 무기 사용 후 재사용 딜레이까지
             moveVec = Vector3.zero; //스왑 중에는 이동을 하지 않음
 
         //충돌하는 방향은 무시
@@ -145,7 +150,24 @@ public class Player : MonoBehaviour
     /// </summary>
     void PlayerTurn()
     {
+        //키보드에 의한 회전
         transform.LookAt(transform.position + moveVec); //캐릭터가 바라보는 방향을 바꿔줌
+
+
+        //마우스에 의한 회전
+        if (fDown)
+        {
+            Ray ray = followCam.ScreenPointToRay(Input.mousePosition); //마우스 위치를 월드 좌표로 변환
+            RaycastHit rayHit;
+            if (Physics.Raycast(ray, out rayHit, 100)) //레이캐스트를 쏘아서 충돌한 물체가 있을 경우
+                                                       //out = 반환값을 주어진 변수에 저장하는 키워드 :return과 비슷함
+            {
+                Vector3 nextVec = rayHit.point - transform.position; //충돌한 물체의 위치 - 캐릭터의 위치
+                nextVec.y = 0; //y축은 0으로 고정
+                transform.LookAt(transform.position + nextVec); //캐릭터가 바라보는 방향을 바꿔줌
+            }
+        }
+        
     }
 
     /// <summary>
@@ -153,7 +175,7 @@ public class Player : MonoBehaviour
     /// </summary>
     void Jump()
     {
-        if (jDown && moveVec == Vector3.zero && !isJump && !isDodge)        //움직이지 않고 있을 때 스페이스 바를 누르면
+        if (jDown && moveVec == Vector3.zero && !isJump && !isDodge && !isReload )        //움직이지 않고 있을 때 스페이스 바를 누르면
         {
             rigid.AddForce(Vector3.up * 15, ForceMode.Impulse ); //위쪽으로 힘을 가해줌 (점프)_ , ForceMode.Impulse는 순간적으로 힘을 가해주는 것
             anim.SetBool("isJump", true); 
@@ -174,14 +196,81 @@ public class Player : MonoBehaviour
         fireDelay += Time.deltaTime; //발사 딜레이를 증가시킴
         isFireReady = equipWaepon.rate < fireDelay; //발사 준비 상태를 체크함
 
-        if (fDown && isFireReady &&!isDodge && !isSwap)
+        if (fDown && isFireReady &&!isDodge && !isSwap && !isReload&& !isJump)
         {
             equipWaepon.Use(); //무기를 사용함
-            anim.SetTrigger("doSwing"); //공격 애니메이션 실행
+            anim.SetTrigger(equipWaepon.type == Weapon.Type.Melee ?"doSwing" : "doShot"); //공격 애니메이션 실행
             fireDelay = 0; //발사 딜레이를 초기화함
         }
 
     }
+
+    void Reload()
+    {
+        
+        if (equipWaepon == null) //손에 무기가 없으면
+        {
+            return;     //안해
+        }
+        else if (equipWaepon.type == Weapon.Type.Melee) //근접무기이면
+        {
+            return;
+        }
+        else if (ammo == 0)//탄약이 없으면
+        {
+            return; 
+        }
+        else if (isReload == true)
+        {
+            return;
+        }
+
+        if (rDown && !isJump && !isDodge && !isSwap && isFireReady) //R키를 눌렀을 때
+        {
+            if (equipWaepon.curAmmo < equipWaepon.maxAmmo) //현재 장착된 무기의 장탄수가 최대 장탄수보다 적으면
+            {
+                anim.SetTrigger("doReload"); //재장전 애니메이션 실행
+                isReload = true; //재장전 상태로 변경
+
+
+                Invoke("ReloadOut", 2f); //2초 후에 ReloadOut() 함수를 실행함
+
+                
+            }
+        }
+
+
+
+    }
+
+    //무한 장전이 아닌 탄 장수에 맞춰서 최대 탄을 장전, 플레이어의 탄약 수는 감소시켜야 함
+    void ReloadOut()
+    {
+        int reAmmo;
+        //reAmmo = 재장전할 탄약의 수
+        
+        
+        if (ammo >= equipWaepon.maxAmmo)
+        {
+            reAmmo = equipWaepon.maxAmmo - equipWaepon.curAmmo; //사용된 탄환만 장전
+            equipWaepon.curAmmo += reAmmo; //장탄수를 최대 장탄수로 설정함
+        } 
+        else
+        {
+            reAmmo = ammo < equipWaepon.maxAmmo ? ammo : equipWaepon.maxAmmo; //장탄수를 최대 장탄수로 설정함
+            equipWaepon.curAmmo = reAmmo; //장탄수를 최대 장탄수로 설정함
+        }
+
+        
+
+        ammo -= reAmmo; //남은 탄약을 감소시킴
+
+        isReload = false; //재장전이 끝난 상태로 변경
+
+    }
+
+
+
 
 
     
@@ -190,7 +279,7 @@ public class Player : MonoBehaviour
     /// </summary>
     void Dodge()
     {
-        if (jDown && moveVec != Vector3.zero && !isJump && !isDodge)       
+        if (jDown && moveVec != Vector3.zero && !isJump && !isDodge && !isSwap &&!isReload)       
         {
             speed *= 2;
             anim.SetTrigger("doDodge");
@@ -228,7 +317,7 @@ public class Player : MonoBehaviour
         if (sDown2) waeponIndex = 1;                //무기1변경
         if (sDown3) waeponIndex = 2;                //무기1변경
 
-        if ((sDown1 || sDown2 || sDown3) && !isJump && !isDodge)
+        if ((sDown1 || sDown2 || sDown3) && !isJump && !isDodge &&!isReload)
         {
             if (equipWaepon != null)                //장착된 무기가 있을 경우에만
             {
@@ -261,7 +350,7 @@ public class Player : MonoBehaviour
     /// </summary>
     void Interaction()
     {
-        if (iDown && nearObject != null && !isJump && !isDodge) //E키를 눌렀을 때 주변 아이템이 있을 경우
+        if (iDown && nearObject != null && !isJump && !isDodge && !isReload) //E키를 눌렀을 때 주변 아이템이 있을 경우
         {
             if (nearObject.tag == "Waepon")
             {
