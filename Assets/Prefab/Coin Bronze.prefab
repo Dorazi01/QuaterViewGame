@@ -97,6 +97,7 @@ GameObject:
   - component: {fileID: 587103234626660892}
   - component: {fileID: 4208548737708754906}
   - component: {fileID: 7978301497704048298}
+  - component: {fileID: -5555365548692253627}
   - component: {fileID: 8819062695559077783}
   m_Layer: 0
   m_Name: Coin Bronze
@@ -114,7 +115,7 @@ Transform:
   m_GameObject: {fileID: 5390349990651747895}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: 2, z: 0}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -145,7 +146,7 @@ Rigidbody:
     m_Bits: 0
   m_ImplicitCom: 1
   m_ImplicitTensor: 1
-  m_UseGravity: 0
+  m_UseGravity: 1
   m_IsKinematic: 0
   m_Interpolate: 0
   m_Constraints: 0
@@ -164,6 +165,27 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   type: 1
   value: 5
+--- !u!135 &-5555365548692253627
+SphereCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5390349990651747895}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Radius: 0.5
+  m_Center: {x: 0, y: 0.24, z: 0}
 --- !u!135 &8819062695559077783
 SphereCollider:
   m_ObjectHideFlags: 0
@@ -183,7 +205,7 @@ SphereCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Radius: 0.5
+  m_Radius: 2
   m_Center: {x: 0, y: 0, z: 0}
 --- !u!1 &6532927671370607174
 GameObject:

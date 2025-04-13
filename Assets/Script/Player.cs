@@ -43,6 +43,7 @@ public class Player : MonoBehaviour
     bool isSwap;
     bool isReload;
     bool isFireReady = true; //발사 준비 상태
+    bool isBorder; //벽에 부딪혔는지 확인하는 변수 선언
 
 
     bool isSide; //벽 충돌 유무
@@ -100,7 +101,23 @@ public class Player : MonoBehaviour
 
     }
 
-    
+    void FreezeRotation()
+    {
+        rigid.angularVelocity = Vector3.zero; //회전 속도를 0으로 고정함
+    }
+
+    void StopToWall()
+    {
+        Debug.DrawRay(transform.position, transform.forward * 5, Color.green); //초록색 레이캐스트를 쏘아서 벽에 부딪혔는지 확인함
+        isBorder = Physics.Raycast(transform.position, transform.forward, 5,LayerMask.GetMask("Wall")); //레이캐스트를 쏘아서 벽에 부딪혔는지 확인함
+
+    }
+
+    private void FixedUpdate()
+    {
+        FreezeRotation();
+        StopToWall(); //벽에 부딪혔을 때 멈추는 함수 호출
+    }
 
 
     /// <summary>
@@ -138,7 +155,8 @@ public class Player : MonoBehaviour
         if (isSide && moveVec == sideVec)
             moveVec = Vector3.zero;
 
-        transform.position += moveVec * speed * (wDown ? 0.3f : 1f) * Time.deltaTime;
+        if (!isBorder)
+            transform.position += moveVec * speed * (wDown ? 0.3f : 1f) * Time.deltaTime;
 
         anim.SetBool("isRun", moveVec != Vector3.zero);
         anim.SetBool("isWalk", wDown);
