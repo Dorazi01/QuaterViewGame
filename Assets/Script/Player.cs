@@ -1,3 +1,4 @@
+using System;
 using System.Security.Cryptography;
 using UnityEngine;
 using UnityEngine.Rendering;
@@ -29,6 +30,7 @@ public class Player : MonoBehaviour
 
     bool wDown;     //쉬프트 키가 눌렸는지 확인하는 변수 선언]
     bool jDown;
+    bool fDown;     //F키 입력
     bool iDown;     //E키 입력
     bool sDown1;
     bool sDown2;
@@ -37,6 +39,7 @@ public class Player : MonoBehaviour
     bool isJump;
     bool isDodge;
     bool isSwap;
+    bool isFireReady = true; //발사 준비 상태
 
 
     bool isSide; //벽 충돌 유무
@@ -51,10 +54,11 @@ public class Player : MonoBehaviour
     Animator anim;
 
     GameObject nearObject; //근처에 있는 오브젝트를 저장할 변수 선언
-    GameObject equipWaepon; //장착된 무기를 저장할 변수 선언
+    Weapon equipWaepon; //장착된 무기를 저장할 변수 선언
 
     int equipWaeponIndex = -1; //장착된 무기의 인덱스 저장할 변수 선언
     //첫 인덱스 값이 -1인 이유는 해머의 인덱스 값이 0이고, int의 초기값은0으로 지정되므로 해머가 없어도 장착될 문제가 발생하기 때문이다
+    float fireDelay;
 
     private void Awake()
     {
@@ -84,12 +88,15 @@ public class Player : MonoBehaviour
 
         PlayerTurn(); //캐릭터가 바라보는 방향을 바꿔주는 함수 호출
         Jump(); //점프하는 함수 호출
+        Attack(); //공격하는 함수 호출
         Dodge();
         Interaction();
         Swap();
 
 
     }
+
+    
 
 
     /// <summary>
@@ -101,6 +108,7 @@ public class Player : MonoBehaviour
         vAxis = Input.GetAxis("Vertical");
         wDown = Input.GetButton("Walk"); //쉬프트키가 눌렸는지 확인하는 변수에 대입
         jDown = Input.GetButtonDown("Jump"); //점프키가 눌렸는지 확인하는 변수에 대입
+        fDown = Input.GetButtonDown("Fire1"); //발사키가 눌렸는지 확인하는 변수에 대입
         iDown = Input.GetButtonDown("Interaction"); //점프키가 눌렸는지 확인하는 변수에 대입
         sDown1 = Input.GetButtonDown("Swap1"); //무기1변경
         sDown2 = Input.GetButtonDown("Swap2"); //무기2변경
@@ -118,7 +126,7 @@ public class Player : MonoBehaviour
         if (isDodge)
             dodgeVec = moveVec;
 
-        if (isSwap)
+        if (isSwap || !isFireReady) //무기 교체 + 무기 발사 준비가 안된 상태일 때 = 무기 사용 후 재사용 딜레이까지
             moveVec = Vector3.zero; //스왑 중에는 이동을 하지 않음
 
         //충돌하는 방향은 무시
@@ -154,6 +162,28 @@ public class Player : MonoBehaviour
         }
 
     }
+
+
+    void Attack()
+    {
+        if (equipWaepon == null)
+        {
+            return;
+        }
+
+        fireDelay += Time.deltaTime; //발사 딜레이를 증가시킴
+        isFireReady = equipWaepon.rate < fireDelay; //발사 준비 상태를 체크함
+
+        if (fDown && isFireReady &&!isDodge && !isSwap)
+        {
+            equipWaepon.Use(); //무기를 사용함
+            anim.SetTrigger("doSwing"); //공격 애니메이션 실행
+            fireDelay = 0; //발사 딜레이를 초기화함
+        }
+
+    }
+
+
     
     /// <summary>
     /// 움직이고 있는 상태에서, 스페이스바를 눌렀을 때 기본 이속의 2배로 구르기 하는 함수
@@ -202,12 +232,12 @@ public class Player : MonoBehaviour
         {
             if (equipWaepon != null)                //장착된 무기가 있을 경우에만
             {
-                equipWaepon.SetActive(false);       //장착된 무기를 비활성화함
+                equipWaepon.gameObject.SetActive(false);       //장착된 무기를 비활성화함
             }
 
             equipWaeponIndex = waeponIndex;        //장착된 무기의 인덱스를 저장함
-            equipWaepon = waepons[waeponIndex];     //장착된 무기가 무엇인지 저장한 후에
-            waepons[waeponIndex].SetActive(true);   //장착된 무기를 활성화함
+            equipWaepon = waepons[waeponIndex].GetComponent<Weapon>();     //장착된 무기가 무엇인지 저장한 후에
+            equipWaepon.gameObject.SetActive(true);   //장착된 무기를 활성화함
 
             anim.SetTrigger("doSwap");              //무기 교체 애니메이션 실행
 
