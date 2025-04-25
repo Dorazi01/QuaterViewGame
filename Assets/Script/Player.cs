@@ -10,6 +10,7 @@ public class Player : MonoBehaviour
     public GameObject[] waepons; //무기 배열 선언
     public bool[] hasWaepons; //무기 보유 여부 배열 선언
     public GameObject[] granades; //수류탄 배열 선언
+    public GameObject granadeObj;
     public int hasGranades;
     public Camera followCam;
 
@@ -32,11 +33,13 @@ public class Player : MonoBehaviour
     bool wDown;     //쉬프트 키가 눌렸는지 확인하는 변수 선언]
     bool jDown;
     bool fDown;     //F키 입력
+    bool gDown;
     bool rDown;     //R키 입력
     bool iDown;     //E키 입력
     bool sDown1;
     bool sDown2;
     bool sDown3;
+
 
     bool isJump;
     bool isDodge;
@@ -97,7 +100,7 @@ public class Player : MonoBehaviour
         Dodge();
         Interaction();
         Swap();
-        
+        Granade();
 
     }
 
@@ -130,11 +133,13 @@ public class Player : MonoBehaviour
         wDown = Input.GetButton("Walk"); //쉬프트키가 눌렸는지 확인하는 변수에 대입
         jDown = Input.GetButtonDown("Jump"); //점프키가 눌렸는지 확인하는 변수에 대입
         fDown = Input.GetButton("Fire1"); //발사키가 눌렸는지 확인하는 변수에 대입
+        gDown = Input.GetButtonDown("Fire2"); //수류탄
         rDown = Input.GetButtonDown("Reload"); //재장전키가 눌렸는지 확인하는 변수에 대입
         iDown = Input.GetButtonDown("Interaction"); //점프키가 눌렸는지 확인하는 변수에 대입
         sDown1 = Input.GetButtonDown("Swap1"); //무기1변경
         sDown2 = Input.GetButtonDown("Swap2"); //무기2변경
         sDown3 = Input.GetButtonDown("Swap3"); //무기3변경
+        
     }
 
 
@@ -161,6 +166,8 @@ public class Player : MonoBehaviour
         anim.SetBool("isRun", moveVec != Vector3.zero);
         anim.SetBool("isWalk", wDown);
     }
+
+
 
 
     /// <summary>
@@ -202,6 +209,43 @@ public class Player : MonoBehaviour
         }
 
     }
+
+
+
+    void Granade()
+    {
+        if (hasGranades == 0)
+        {
+            return;
+        }
+
+        if (gDown && !isReload && !isSwap)
+        {
+            Ray ray = followCam.ScreenPointToRay(Input.mousePosition); //마우스 위치를 월드 좌표로 변환
+            RaycastHit rayHit;
+            if (Physics.Raycast(ray, out rayHit, 100)) //레이캐스트를 쏘아서 충돌한 물체가 있을 경우
+                                                       //out = 반환값을 주어진 변수에 저장하는 키워드 :return과 비슷함
+            {
+                Vector3 nextVec = rayHit.point - transform.position; //충돌한 물체의 위치 - 캐릭터의 위치
+                nextVec.y = 10; //y축은 0으로 고정
+
+                GameObject instantGranade = Instantiate(granadeObj, transform.position, transform.rotation);
+                Rigidbody rigidGranade = instantGranade.GetComponent<Rigidbody>();
+                rigidGranade.AddForce(nextVec, ForceMode.Impulse);
+                rigidGranade.AddTorque(Vector3.back * 4, ForceMode.Impulse);
+
+                hasGranades--;
+                granades[hasGranades].SetActive(false);
+
+            }
+        }
+
+
+
+        
+    }
+
+
 
 
     void Attack()
