@@ -13,14 +13,17 @@ public class Bullet : MonoBehaviour
         {
             Destroy(gameObject,3); //총알을 삭제
         }
-        else if (collision.gameObject.tag == "Wall") //충돌한 오브젝트가 벽일 경우
-        {
-            Destroy(gameObject); //총알을 삭제
-        }
+        
 
     }
 
-
+    private void OnTriggerEnter(Collider other)
+    {
+        if (other.gameObject.tag == "Wall") //충돌한 오브젝트가 벽일 경우
+        {
+            Destroy(gameObject); //총알을 삭제
+        }
+    }
 
 
 }
