@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Security.Cryptography;
 using UnityEngine;
 using UnityEngine.Rendering;
@@ -13,6 +14,7 @@ public class Player : MonoBehaviour
     public GameObject granadeObj;
     public int hasGranades;
     public Camera followCam;
+    
 
 
     public int ammo;
@@ -47,7 +49,7 @@ public class Player : MonoBehaviour
     bool isReload;
     bool isFireReady = true; //발사 준비 상태
     bool isBorder; //벽에 부딪혔는지 확인하는 변수 선언
-
+    bool isDamage;    //피격 유무 체크
 
     bool isSide; //벽 충돌 유무
     Vector3 sideVec; //벽 충돌 방향 저장
@@ -59,6 +61,7 @@ public class Player : MonoBehaviour
 
     Rigidbody rigid;
     Animator anim;
+    MeshRenderer[] meshes;
 
     GameObject nearObject; //근처에 있는 오브젝트를 저장할 변수 선언
     Weapon equipWaepon; //장착된 무기를 저장할 변수 선언
@@ -71,6 +74,7 @@ public class Player : MonoBehaviour
     {
         rigid = GetComponent<Rigidbody>(); //리지드바디 컴포넌트 가져오기
         anim = GetComponentInChildren<Animator>(); //애니메이터 컴포넌트 가져오기
+        meshes = GetComponentsInChildren<MeshRenderer>();
         
     }
 
@@ -522,8 +526,44 @@ public class Player : MonoBehaviour
             Destroy(other.gameObject); //수집한 아이템을 삭제함
 
         }
+        else if (other.tag == "EnemyBullet")
+        {
+            if (!isDamage)
+            {
+                Bullet bullet = other.GetComponent<Bullet>();
+                health -= bullet.damage; //무기에서 데미지를 가져옴
+                if (other.GetComponent<Rigidbody>() != null){       //근접이 아닌 미사일일 경우
+                    Destroy(other.gameObject);      //피격 후 미사일 삭제
+                }
+                StartCoroutine(OnDamage()); //데미지 코루틴 실행
+            }
+            
+
+        }
 
     }
+
+    IEnumerator OnDamage()
+    {
+        isDamage = true; //피격 상태로 변경
+        foreach(MeshRenderer mesh in meshes) //모든 메쉬 렌더러에 대해
+        {
+            mesh.material.color = Color.yellow; //노란색으로 변경
+        }
+        yield return new WaitForSeconds(1f);
+
+
+        isDamage = false; //피격X 상태로 변경
+        foreach (MeshRenderer mesh in meshes) //모든 메쉬 렌더러에 대해
+        {
+            mesh.material.color = Color.white; //흰색으로 변경
+        }
+    }
+
+
+
+
+
 }
 
 

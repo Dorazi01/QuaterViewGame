@@ -5,13 +5,20 @@ using UnityEngine.AI;
 
 public class Enemy : MonoBehaviour
 {
+    public enum Type { A, B, C };
+    public Type enemyType;
+
     // Start is called once before the first execution of Update after the MonoBehaviour is created
 
     public int maxHealth;
     public int curHealth;
     public Transform target;
+    public BoxCollider meleeArea; //근접 공격 범위
+    public GameObject bullet;
     public bool isChase;
     bool isHit = false; //적이 맞았는지 확인하는 변수
+    bool isAttack; 
+    
     
 
     Material mat; //Material 컴포넌트
@@ -36,9 +43,10 @@ public class Enemy : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        if (isChase)
+        if (nav.enabled)
         {
             nav.SetDestination(target.position); //타겟의 위치로 이동
+            nav.isStopped = !isChase;
         }
         
     }
@@ -67,7 +75,94 @@ public class Enemy : MonoBehaviour
     private void FixedUpdate()
     {
         FreezeVelocity(); //속도 고정
+        Targeting();
     }
+
+    void Targeting()
+    {
+        float targetRadious = 0f;
+        float targetRange = 0f;
+
+        switch (enemyType)
+        {
+            case Type.A:
+                targetRadious = 1.5f;
+                targetRange = 3f;
+                break;
+            case Type.B:
+                targetRadious = 1f;
+                targetRange = 12f;
+                break;
+            case Type.C:
+                targetRadious = 0.5f;
+                targetRange = 25f;
+                
+                break;
+        }
+
+        RaycastHit[] rayHits = Physics.SphereCastAll(transform.position, targetRadious, transform.forward, targetRange, LayerMask.GetMask("Player"));
+
+        if (rayHits.Length > 0 && !isAttack)
+        {
+            StartCoroutine(Attack());
+        }
+    }
+
+    IEnumerator Attack()
+    {
+        isChase = false; //추적 중지
+        isAttack = true; //공격 중
+        anim.SetBool("isAttack", true); //공격 애니메이션 실행
+
+        switch (enemyType)
+        {
+            case Type.A:
+                yield return new WaitForSeconds(0.2f);
+                meleeArea.enabled = true;
+
+                yield return new WaitForSeconds(1f);
+                meleeArea.enabled = false;
+
+                yield return new WaitForSeconds(1f);
+                break;
+            case Type.B:
+                yield return new WaitForSeconds(0.1f); //0.1초 대기
+                rigid.AddForce(transform.forward * 20, ForceMode.Impulse);
+                meleeArea.enabled = true;
+
+                yield return new WaitForSeconds(0.5f);
+                rigid.linearVelocity = Vector3.zero;
+                meleeArea.enabled = false;
+
+                yield return new WaitForSeconds(2f);
+                break;
+            case Type.C:
+                yield return new WaitForSeconds(0.5f); //0.5초 대기
+                GameObject instantBullet = Instantiate(bullet, transform.position, transform.rotation);
+                Rigidbody rigidBullet = instantBullet.GetComponent<Rigidbody>();
+                rigidBullet.linearVelocity = transform.forward * 20;
+
+
+                yield return new WaitForSeconds(2f); //0.5초 대기
+
+
+                break;
+        }
+
+
+        
+
+
+
+
+
+        isChase = true;
+        isAttack = false; //공격 중지
+        anim.SetBool("isAttack", false); //공격 애니메이션 종료
+
+    }
+
+
 
     private void OnTriggerEnter(Collider other)
     {

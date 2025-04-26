@@ -5,7 +5,7 @@ public class Bullet : MonoBehaviour
     // Start is called once before the first execution of Update after the MonoBehaviour is created
 
     public int damage; //총알의 데미지
-
+    public bool isMelee; // 근접 공격인지 확인하는 변수
 
     private void OnCollisionEnter(Collision collision)
     {
@@ -19,7 +19,7 @@ public class Bullet : MonoBehaviour
 
     private void OnTriggerEnter(Collider other)
     {
-        if (other.gameObject.tag == "Wall") //충돌한 오브젝트가 벽일 경우
+        if (!isMelee && other.gameObject.tag == "Wall") //충돌한 오브젝트가 벽일 경우
         {
             Destroy(gameObject); //총알을 삭제
         }
