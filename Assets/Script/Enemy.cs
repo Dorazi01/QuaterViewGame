@@ -1,5 +1,7 @@
 using System.Collections;
+using UnityEditor.Search;
 using UnityEngine;
+using UnityEngine.AI;
 
 public class Enemy : MonoBehaviour
 {
@@ -7,24 +9,64 @@ public class Enemy : MonoBehaviour
 
     public int maxHealth;
     public int curHealth;
+    public Transform target;
+    public bool isChase;
     bool isHit = false; //적이 맞았는지 확인하는 변수
+    
 
     Material mat; //Material 컴포넌트
-
     Rigidbody rigid;
     BoxCollider boxColl;
+    NavMeshAgent nav;
+    Animator anim;
 
-    void Start()
+    void Awake()
     {
         rigid = GetComponent<Rigidbody>(); //Rigidbody 컴포넌트를 가져옴
         boxColl = GetComponent<BoxCollider>(); //BoxCollider 컴포넌트를 가져옴
-        mat = GetComponent<MeshRenderer>().material; //Renderer 컴포넌트의 Material을 가져옴
+        mat = GetComponentInChildren<MeshRenderer>().material; //Renderer 컴포넌트의 Material을 가져옴
+        nav = GetComponent<NavMeshAgent>(); //NavMeshAgent 컴포넌트를 가져옴
+        anim = GetComponentInChildren<Animator>(); //Animator 컴포넌트를 가져옴
+
+        Invoke("ChaseStart", 2); 
     }
+
+
 
     // Update is called once per frame
     void Update()
     {
+        if (isChase)
+        {
+            nav.SetDestination(target.position); //타겟의 위치로 이동
+        }
         
+    }
+
+
+    void ChaseStart()
+    {
+        isChase = true; //추적 시작
+        anim.SetBool("isWalk", true); //애니메이션 시작
+    }
+
+
+
+
+
+    void FreezeVelocity()
+    {
+        if (isChase)
+        {
+            rigid.linearVelocity = Vector3.zero; //회전 속도를 0으로 고정함
+            rigid.angularVelocity = Vector3.zero; //회전 속도를 0으로 고정함
+        }
+        
+    }
+
+    private void FixedUpdate()
+    {
+        FreezeVelocity(); //속도 고정
     }
 
     private void OnTriggerEnter(Collider other)
@@ -81,6 +123,9 @@ public class Enemy : MonoBehaviour
         {
             mat.color = Color.gray; //색상 변경
             gameObject.layer = 11; //적 삭제 레이어로 변경
+            isChase = false; //추적 중지
+            nav.enabled = false; //NavMeshAgent 비활성화
+            anim.SetTrigger("doDie"); //죽음 애니메이션 실행
 
 
             if (isNade) //수류탄에 맞았을 때
